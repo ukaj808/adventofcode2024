@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
-    "day1": "tsc && ts-node day-1/index.ts"
+    "day1": "tsc && ts-node day-1.ts"
   },
   "author": "",
   "license": "ISC",

@@ -1,1 +1,3 @@
 ts/node_modules/
+ts/dist/
+haskell/dist-newstyle/

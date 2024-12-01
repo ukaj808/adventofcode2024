@@ -20,12 +20,11 @@ const simScore = (l1: number[], l2: number[]): number => {
 };
 
 const readInput = (): [number[], number[]] => {
-  return fs.readFileSync(path.join(__dirname, "input.txt"), 'utf-8')
+  return fs.readFileSync(path.join(__dirname, "../inputs/day-1-input.txt"), 'utf-8')
     .split("\n")
     .filter((x) => x !== "")
     .reduce((acc: [number[], number[]], ln: string) => {
        const numPair = ln.split("   ").map((x) => parseInt(x));
-       console.log(ln);
        acc[0].push(numPair[0]);
        acc[1].push(numPair[1]);
        return acc;
