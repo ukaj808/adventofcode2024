@@ -39,18 +39,17 @@ const countSafeReports2 = Array.from(input.reduce((acc: Map<number[], number[][]
     acc.set(report, []);
     return acc;
   } 
-
   const possibilties: number[][] = report.map((_, i) => {
     return report.toSpliced(i, 1);
   });
   acc.set(report, possibilties);
   return acc;
 }, new Map<number[], number[][]>()).entries()) 
-  .reduce((acc, [_, v]) => { 
-    if (v.length == 0) return acc + 1;
-    if (v.some(isReportSafe)) return acc + 1;
-    return acc;
-  }, 0);
+.reduce((acc, [_, v]) => { 
+  if (v.length == 0) return acc + 1;
+  if (v.some(isReportSafe)) return acc + 1;
+  return acc;
+}, 0);
 
 
 console.log("Day 1 Part 1 Result: " + countSafeReports);
