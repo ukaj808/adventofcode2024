@@ -7,7 +7,8 @@
     "day2": "tsc && ts-node day-2.ts",
     "day3": "tsc && ts-node day-3.ts",
     "day4": "tsc && ts-node day-4.ts",
-    "day5": "tsc && ts-node day-5.ts"
+    "day5": "tsc && ts-node day-5.ts",
+    "day6": "tsc && ts-node day-6.ts"
   },
   "author": "",
   "license": "ISC",
