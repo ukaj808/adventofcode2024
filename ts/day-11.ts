@@ -63,12 +63,12 @@ const blink = (stones: number[], timesLeft: number, cache: Map<string, number>):
   let res: number = 0;
   for (let i = 0; i < stones.length; i++) {
     const stone = stones[i];
-    if (cache.has(constructCacheKey(stone, timesLeft-1))) {
-      res += cache.get(constructCacheKey(stone, timesLeft-1))!;
+    if (cache.has(constructCacheKey(stone, timesLeft))) {
+      res += cache.get(constructCacheKey(stone, timesLeft))!;
     } else {
     if (stone === 0) {
       const blinked = blink([1], timesLeft - 1, cache);
-      cache.set(constructCacheKey(stone, timesLeft - 1), blinked);
+      cache.set(constructCacheKey(stone, timesLeft), blinked);
       res += blinked;
     } else if (((stone+'').length % 2) === 0) {
       const stoneAsString = stone+'';
@@ -76,11 +76,11 @@ const blink = (stones: number[], timesLeft: number, cache: Map<string, number>):
         [parseInt((stoneAsString).substring(0, stoneAsString.length / 2)),
           parseInt(stoneAsString.substring(stoneAsString.length / 2, stoneAsString.length))];
 	const blinked = blink([ ...newStones], timesLeft - 1, cache);
-	cache.set(constructCacheKey(stone, timesLeft - 1), blinked);
+	cache.set(constructCacheKey(stone, timesLeft), blinked);
         res += blinked;
     } else {
       const blinked = blink([stone * 2024], timesLeft - 1, cache);
-      cache.set(constructCacheKey(stone, timesLeft - 1), blinked);
+      cache.set(constructCacheKey(stone, timesLeft), blinked);
       res += blinked;
     }
     }
