@@ -21,6 +21,17 @@ type ScoredRegion = {
   sides: number;
 }
 
+const rotateLeft = <T>(array: T[][]): T[][] => {
+    var result: T[][] = [];
+    array.forEach(function (a, i, aa) {
+        a.forEach(function (b, j, bb) {
+            result[j] = result[j] || [];
+            result[j][aa.length - i - 1] = b;
+        });
+    });
+    return result;
+}
+
 const calcArea = (region: Region): number => region.indexes.length;
 
 const calcPerimeter = (region: Region): number => {
@@ -35,118 +46,105 @@ const calcPerimeter = (region: Region): number => {
   }, 0);
 };
 
-const calcSides = (region: Region): number => {
-  console.log("Calculating sides for region with plant: " + region.plant);
+const calcSides = (region: Region, gardenPlots: string[][]): number => {
+  // Create copy of matrix with only the region planted
+  const gardenPlotsCopy = gardenPlots.map((row) => row.map((p) => ".")); 
+  region.indexes.forEach((idx) => gardenPlotsCopy[idx[0]][idx[1]] = region.plant);
 
-  const hasRight = (index: [number, number], r: Region) => {
-    const i = r.indexes.findIndex((ix) => ix[0] === index[0] && ix[1] === index[1]);
-    const rest = r.indexes.toSpliced(i, 1);
-    return rest.some((ix) => ix[0] === index[0] && ix[1] === index[1] + 1);
+  // Create an array of values by hitting the left side of the region and counting the last empty space until the plant
+  const leftSide = gardenPlotsCopy.map((row) => {
+    return row.findIndex((p) => p === region.plant)
+  }).filter((val) => val !== -1);
+
+  // Map numbers in array that are a valley to a peak
+  
+  let leftSideScore: number;
+
+  if (leftSide.every((val) => val === leftSide[0])) {
+    leftSideScore = 1;
+  } else {
+    leftSideScore = leftSide.slice(1).reduce((acc, val) => {
+      if (val !== acc.lastValue) {
+	return { lastValue: val, score: acc.score + 1 };
+      }
+      return acc;
+    }, {lastValue: leftSide[0], score: 1}).score;;
   };
 
-  const hasDown = (index: [number, number], r: Region) => {
-    const i = r.indexes.findIndex((ix) => ix[0] === index[0] && ix[1] === index[1]);
-    const rest = r.indexes.toSpliced(i, 1);
-    return rest.some((ix) => ix[0] === index[0] + 1 && ix[1] === index[1]);
-  }
+  console.log("Left side cols: " + leftSide.map((val) => val).join(", "));
+  console.log("Left side score: " + leftSideScore + "For plant: " + region.plant);
 
-  const hasLeft = (index: [number, number], r: Region) => {
-    const i = r.indexes.findIndex((ix) => ix[0] === index[0] && ix[1] === index[1]);
-    const rest = r.indexes.toSpliced(i, 1);
-    return rest.some((ix) => ix[0] === index[0] && ix[1] === index[1] - 1);
-  }
+  const gardenPlotsRotatedOnce = rotateLeft(gardenPlotsCopy);
 
-  const hasUp = (index: [number, number], r: Region) => {
-    const i = r.indexes.findIndex((ix) => ix[0] === index[0] && ix[1] === index[1]);
-    const rest = r.indexes.toSpliced(i, 1);
-    return rest.some((ix) => ix[0] === index[0] - 1 && ix[1] === index[1]);
-  }
+  const bottomSide = gardenPlotsRotatedOnce.map((row) => {
+    return row.findIndex((p) => p === region.plant);
+  }).filter((val) => val !== -1);
 
-  const buildFencedRegion =  (region: Region): string[][] => {
-    const rowLength = region.indexes.reduce(((acc, [x, _]) => {
-      if (x > acc) return x;
-      return acc;
-    }), 0) + 1;
-    const colLength = region.indexes.reduce(((acc, [_, y]) => {
-      if (y > acc) return y;
-      return acc;
-    }), 0) + 1;
-    let fencedRegion = Array.from({length: rowLength + 2 }, () => Array.from({length: colLength + 2}, () => "."));
-    fencedRegion = fencedRegion.map((row, x) => row.map((val, y) => {
-      if (region.indexes.some((idx) => idx[0] === x && idx[1] === y)) {
-        return region.plant;
+  let bottomSideScore: number;
+
+  if (bottomSide.every((val) => val === bottomSide[0])) {
+    bottomSideScore = 1;
+  } else {
+    bottomSideScore = bottomSide.slice(1).reduce((acc, val) => {
+      if (val !== acc.lastValue) {
+	return { lastValue: val, score: acc.score + 1 };
       }
-      return val;
-    }));
-    return fencedRegion;
-  };
-
-  const trace = (start: [number, number], direction: string, acc: number, visited: Set<string>): number => {
-    console.log("Turns: " + acc);
-    console.log(`Current position: x:${start[0]} y:${start[1]}`);
-    if (visited.has(`${start[0]}-${start[1]}-${direction}`)) return acc;
-    visited.add(`${start[0]}-${start[1]}-${direction}`);
-    //var waitTill = new Date(new Date().getTime() + 2 * 1000);
-    //while(waitTill > new Date()){}
-    if (direction === "right") {
-      if (hasRight(start, region)) {
-	console.log("Going right");
-        return trace([start[0], start[1] + 1], "right", acc, visited);
-      } else if (hasUp(start, region)) {
-	console.log("Going Up");
-	return trace([start[0] - 1, start[1]], "up", acc + 1, visited);
-      } else if (hasDown(start, region)) {
-	console.log("Going down");
-	return trace([start[0] + 1, start[1]], "down", acc + 1, visited);
-      } else {
-	console.log("U-Turn! Going left");
-	return trace([start[0], start[1] - 1], "left", acc + 2, visited);
-      }
-    } else if (direction === "down") {
-	if (hasRight(start, region)) {
-	  console.log("Going right");
-	  return trace([start[0], start[1] + 1], "right", acc + 1, visited);
-	} else if (hasDown(start, region)) {
-	  console.log("Going down");
-	  return trace([start[0] + 1, start[1]], "down", acc, visited);
-	} else if (hasLeft(start, region)) {
-	  console.log("Going left");
-	  return trace([start[0], start[1] - 1], "left", acc + 1, visited);
-	} else {
-	  console.log("U-Turn! Going up");
-	  return trace([start[0] - 1, start[1]], "up", acc + 2, visited);
-	}
-    } else if (direction === "left") {
-        if (hasDown(start, region)) {
-	  console.log("Going down");
-	  return trace([start[0] + 1, start[1]], "down", acc + 1, visited);
-	} else if (hasLeft(start, region)) {
-	  console.log("Going left");
-	  return trace([start[0], start[1] - 1], "left", acc, visited);
-	} else if (hasUp(start, region)) {
-	  console.log("Going up");
-	  return trace([start[0] - 1, start[1]], "up", acc + 1, visited);
-	} else {
-	  console.log("U-Turn! Going right");
-	  return trace([start[0], start[1] + 1], "right", acc + 2, visited);
-	}
-    } else {
-	if (hasUp(start, region)) {
-	  console.log("Going up");
-	  return trace([start[0] - 1, start[1]], "up", acc, visited);
-	} else if (hasRight(start, region)) {
-	  console.log("Going right");
-	  return trace([start[0], start[1] + 1], "right", acc + 1, visited);
-	} else if (hasLeft(start, region)) {
-	  console.log("Going left");
-	  return trace([start[0], start[1] - 1], "left", acc + 1, visited);
-	} else {
-	  console.log("U-Turn! Going down");
-	  return trace([start[0] + 1, start[1]], "down", acc + 2, visited);
-	}
+      return acc;
     }
-  };
-  return trace(region.indexes[0], "right", 0, new Set<string>());
+    , {lastValue: bottomSide[0], score: 1}).score;
+  }
+
+  console.log("Bottom side cols: " + bottomSide.map((val) => val).join(", "));
+  console.log("Bottom side score: " + bottomSideScore + "For plant: " + region.plant);
+
+  const gardenPlotsRotatedTwice = rotateLeft(gardenPlotsRotatedOnce);
+
+  const rightSide = gardenPlotsRotatedTwice.map((row) => {
+    return row.findIndex((p) => p === region.plant);
+  }).filter((val) => val !== -1);
+
+  let rightSideScore: number;
+
+  if (rightSide.every((val) => val === rightSide[0])) {
+    rightSideScore = 1;
+  } else {
+    rightSideScore = rightSide.slice(1).reduce((acc, val) => {
+      if (val !== acc.lastValue) {
+	return { lastValue: val, score: acc.score + 1 };
+      }
+      return acc;
+    }
+    , {lastValue: rightSide[0], score: 1}).score;
+  }
+
+  console.log("Right side cols: " + rightSide.map((val) => val).join(", "));
+  console.log("Right side score: " + rightSideScore + "For plant: " + region.plant);
+
+const gardenPlotsRotatedThrice = rotateLeft(gardenPlotsRotatedTwice);
+
+  const topSide = gardenPlotsRotatedThrice.map((row) => {
+    return row.findIndex((p) => p === region.plant);
+  }).filter((val) => val !== -1);
+
+  let topSideScore: number;
+
+  if (topSide.every((val) => val === topSide[0])) {
+    topSideScore = 1;
+  } else {
+    topSideScore = topSide.slice(1).reduce((acc, val) => {
+      if (val !== acc.lastValue) {
+	return { lastValue: val, score: acc.score + 1 };
+      }
+      return acc;
+    }
+    , {lastValue: topSide[0], score: 1}).score;
+  }
+  
+  console.log("Top side cols: " + topSide.map((val) => val).join(", "));
+  console.log("Top side score: " + topSideScore + "For plant: " + region.plant);
+
+return leftSideScore + bottomSideScore + rightSideScore + topSideScore;
+  
 };
 
 const mapGarden = 
@@ -198,11 +196,13 @@ const mapGarden =
 
 }
 
-const regions = mapGarden([], readInput()).regions;
+const input = readInput();
+
+const regions = mapGarden([], input).regions;
 
 const scoredRegions: ScoredRegion[] = 
   regions.map((r) => {
-    return { plant: r.plant, area: calcArea(r), perimeter: calcPerimeter(r), sides: calcSides(r) };
+    return { plant: r.plant, area: calcArea(r), perimeter: calcPerimeter(r), sides: calcSides(r, input) };
   });
 
 scoredRegions.forEach((r) => {
