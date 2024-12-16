@@ -1,7 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-
 type Machine = {
   buttonA: { xMoves: number, yMoves: number },
   buttonB: { xMoves: number, yMoves: number },
@@ -30,7 +29,7 @@ const readInput = (): Machine[] => {
 	acc.buttonB = { xMoves: parseInt(matched![1]), yMoves: parseInt(matched![2]) };
       } else {
 	const matched = info.match(prizeReg);
-	acc.prizeLocation = { x: parseInt(matched![1]), y: parseInt(matched![2]) };
+	acc.prizeLocation = { x: 10000000000000 + parseInt(matched![1]), y: 10000000000000 + parseInt(matched![2]) };
       }
       return acc;
     }, { buttonA: { xMoves: 0, yMoves: 0 }, buttonB: { xMoves: 0, yMoves: 0 }, prizeLocation: { x: 0, y: 0 } });
@@ -39,93 +38,38 @@ const readInput = (): Machine[] => {
 
 const play = (machine: Machine): PlayThrough[] => {
 
-  const cache: Map<string, [number, number][]> = new Map();
+  const maximumAButtonPressesForX = Math.floor(machine.prizeLocation.x / machine.buttonA.xMoves);
+  const maximumAButtonPressesForY = Math.floor(machine.prizeLocation.y / machine.buttonA.yMoves);
 
-  const goXAxis = (axPresses: number, bxPresses: number, xPrizeCoord: number): [number, number][] => {
-    
-    const key = `x-${axPresses}-${bxPresses}`;
-   
-    if (cache.has(key)) {
-      return cache.get(key)!;
+  const maximumBButtonPressesForX = Math.floor(machine.prizeLocation.x / machine.buttonB.xMoves);
+  const maximumBButtonPressesForY = Math.floor(machine.prizeLocation.y / machine.buttonB.yMoves);
+
+  const winningPlayThroughs: PlayThrough[] = [];
+
+  for (let a = 0; a <= maximumAButtonPressesForX && a <= maximumAButtonPressesForY; a++) {
+    for (let b = 0; b <= maximumBButtonPressesForX && b <= maximumBButtonPressesForY; b++) {
+      const calculatedX = (a * machine.buttonA.xMoves) + (b * machine.buttonB.xMoves);
+      const calculatedY = (a * machine.buttonA.yMoves) + (b * machine.buttonB.yMoves);
+      if (calculatedX === machine.prizeLocation.x && calculatedY === machine.prizeLocation.y) {
+	winningPlayThroughs.push({ aButtonPresses: a, bButtonPresses: b });
+      }
     }
+  }
 
-    const calculatedXCoord = (axPresses * machine.buttonA.xMoves) + (bxPresses * machine.buttonB.xMoves);
-    if (calculatedXCoord > xPrizeCoord) { 
-      return []; 
-    }
-    if (calculatedXCoord === xPrizeCoord) { 
-      return [[axPresses, bxPresses]];
-    }
-
-    let xResults: [number, number][] = [];
-
-    if (calculatedXCoord + machine.buttonA.xMoves <= xPrizeCoord) {
-       xResults = goXAxis(axPresses + 1, bxPresses, xPrizeCoord);
-    }
-
-    if (calculatedXCoord + machine.buttonB.xMoves <= xPrizeCoord) {
-      xResults = [...xResults, ...goXAxis(axPresses, bxPresses + 1, xPrizeCoord)];
-    }
-
-    cache.set(key, xResults);
-
-    return xResults;
-  };
-
-  const goYAxis = (ayPresses: number, byPresses: number, yPrizeCoord: number): [number, number][] => {
-
-    const key = `y-${ayPresses}-${byPresses}`;
-    if (cache.has(key)) {
-      return cache.get(key)!;
-    }
-
-    const calculatedYCoord = (ayPresses * machine.buttonA.yMoves) + (byPresses * machine.buttonB.yMoves);
-    if (calculatedYCoord > yPrizeCoord) return [];
-    if (calculatedYCoord === yPrizeCoord) return [[ayPresses, byPresses]];
-
-
-    let yResults: [number, number][] = [];
-
-    if (calculatedYCoord + machine.buttonA.yMoves <= yPrizeCoord) {
-      yResults = [...goYAxis(ayPresses + 1, byPresses, yPrizeCoord)];
-    }
-
-    if (calculatedYCoord + machine.buttonB.yMoves <= yPrizeCoord) {
-      yResults = [...yResults, ...goYAxis(ayPresses, byPresses + 1, yPrizeCoord)];
-    }
-
-    cache.set(key, yResults);
-
-    return yResults;
-  };
-
-  const abxCombinations: [number, number][] = goXAxis(0, 0, machine.prizeLocation.x);
-  const abyCombinations: [number, number][] = goYAxis(0, 0, machine.prizeLocation.y);
-
-  console.log(abxCombinations);
-  console.log(abyCombinations);
-
-  return abxCombinations.reduce((acc: PlayThrough[], abx) => {
-    if (abyCombinations.some((aby: [number, number]) => abx[0] === aby[0] && abx[1] === aby[1])) {
-      console.log('found a match');
-      return [...acc, { aButtonPresses: abx[0], bButtonPresses: abx[1] }]
-    }
-    return acc;
-  }, []);
+  return winningPlayThroughs;
 
 };
 
 const input = readInput();
 
-/*
 const fewestTokensToWinAllPossiblePrizes = 
   input.map(play).map((playThroughs) => {
+    if (playThroughs.length === 0) return 0;
     return playThroughs.reduce((acc, pt) => {
       const tokenCount = (pt.aButtonPresses * 3) + (pt.bButtonPresses * 1);
       if (tokenCount < acc) return tokenCount;
       return acc;
     }, Number.MAX_SAFE_INTEGER);
   }).reduce((acc, tokens) => acc + tokens);
-  */
 
-console.log(play(input[0]));
+console.log(fewestTokensToWinAllPossiblePrizes);
