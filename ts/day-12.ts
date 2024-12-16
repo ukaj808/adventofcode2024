@@ -46,220 +46,104 @@ const calcPerimeter = (region: Region): number => {
   }, 0);
 };
 
-
-const splitShotHit = (index: [number, number], gardenPlots: string[][], region: Region, side: "left" | "bottom" | "right" | "top"): false | [number, number][] => {
-  const goUp = (i: [number, number], gp: string[][]): false | [number, number] => {
-    if (region.plant === "R") {
-      //console.log(`split shot hit against plant: ${region.plant} going up at x: ${i[0]} y: ${i[1]}`);
-    }
-    if (i[1] < 0) { 
-	//if (region.plant === "R") console.log("hit the left side of the garden");
-	return false;
-    }
-    if (i[0] < 0) { 
-       //if (region.plant === "R") console.log("hit the top of the garden");
-       return false; 
-    }
-    if (gp[i[0]][i[1]] !== "." && gp[i[0]][i[1]] !== undefined) return [i[0], i[1]];
-    return goUp([i[0] - 1, i[1]], gp);
-  }
-  const goDown = (i: [number, number], gp: string[][]): false | [number, number] => {
-    if (region.plant === "R") {
-      //console.log(`split shot hit against plant: ${region.plant} going down at x: ${i[0]} y: ${i[1]}`);
-    }
-    if (i[0] >= (gp.length - 1)) { 
-      //console.log("hit the bottom of the garden");
-      return false; 
-    }
-    if (gp[i[0]][i[1]] !== "." && gp[i[0]][i[1]] !== undefined) return [i[0], i[1]];
-    return goDown([i[0]+1, i[1]], gp);
-  }
-
-  const hitGoingUp = goUp([index[0] - 1, index[1]], gardenPlots);
-  const hitGoingDown = goDown([index[0] + 1, index[1]], gardenPlots);
-
-  const calcRicochets = (upStart: [number, number], downStart: [number, number], gp: string[][]): [number, number][] => {
-    const collectLeft = (i: [number, number], gp: string[][], res: [number, number][]): [number, number][] => {
-      if (i[1] < 0) return res;
-      if (gp[i[0]][i[1]] === "." || gp[i[0]][i[1]] === undefined) {
-        return res;
-      }
-      return collectLeft([i[0], i[1] - 1], gp, [...res, i]);
-    }
-
-    const topRicochets = collectLeft(upStart, gp, []);
-    const bottomRicochets = collectLeft(downStart, gp, []);
-
-    return [...topRicochets, ...bottomRicochets];
-  };
-
-
-  if (hitGoingUp instanceof Array && hitGoingDown instanceof Array) {
-    const ricochets = calcRicochets(hitGoingUp, hitGoingDown, gardenPlots);
-    // console.log("Split shot hit for plant: " + region.plant + " at x: " + index[0] + " y: " + index[1] + " conming from the " + side);
-    return ricochets;
-  }
-  else return false;
-
-};
-
 const calcSides = (region: Region, gardenPlots: string[][]): number => {
-
-
   // Create copy of matrix with only the region planted
   const gardenPlotsCopy = gardenPlots.map((row) => row.map((p) => ".")); 
   region.indexes.forEach((idx) => gardenPlotsCopy[idx[0]][idx[1]] = region.plant);
 
   // Create an array of values by hitting the left side of the region and counting the last empty space until the plant
-  let leftSide: [number, number][] = gardenPlotsCopy.map((row, i) => {
-    return [i, row.findIndex((p) => p === region.plant)]
-  });
-  leftSide = leftSide.filter((val) => val[1] !== -1);
-  const leftSideRicochets: Set<string> = new Set<string>();
+  const leftSide = gardenPlotsCopy.map((row) => {
+    return row.findIndex((p) => p === region.plant)
+  }).filter((val) => val !== -1);
 
   // Map numbers in array that are a valley to a peak
-  //
-  let leftSideSplitShotScore = 0;
-
-  leftSideSplitShotScore = leftSide.reduce((acc, val) => {
-    const valley: [number, number] = [val[0], val[1] - 1];
-    const splitShot = splitShotHit(valley, gardenPlotsCopy, region, "left");
-    if (splitShot) {
-      splitShot.forEach((val) => leftSideRicochets.add(`${val[0]}-${val[1]}`));
-    }
-    if (splitShot) return acc + 2;
-    else return acc;
-  }, 0);
   
-  let leftSideStraightShotScore: number;
+  let leftSideScore: number;
 
-  if (leftSide.every(([_, val]) => val === leftSide[0][1])) {
-    leftSideStraightShotScore = 1;
+  if (leftSide.every((val) => val === leftSide[0])) {
+    leftSideScore = 1;
   } else {
-    leftSideStraightShotScore = leftSide.slice(1).reduce((acc, val) => {
-      if (val[1] !== acc.lastValue[1]) {
-	return { lastValue: val, score: acc.score + 1 };
+    leftSideScore = leftSide.slice(1).reduce((acc, val) => {
+      if (val !== acc.lastValue) {
+	return { lastValue: val, score: acc.score + 2 };
       }
       return acc;
     }, {lastValue: leftSide[0], score: 1}).score;;
   };
 
-  let bottomSide: [number, number][] = gardenPlotsCopy[gardenPlotsCopy.length - 1].map((p, i) => {
-    let row = gardenPlotsCopy.length - 1;
-    for (row; row >= 0; row--) {
-      if (gardenPlotsCopy[row][i] !== ".") return [row, i];
-    }
-    return [-1, i];;
-  });
-  bottomSide = bottomSide.filter((val) => val[0] !== -1);
+  console.log("Left side cols: " + leftSide.map((val) => val).join(", "));
+  console.log("Left side score: " + leftSideScore + "For plant: " + region.plant);
 
-  const bottomSideRicochets: Set<string> = new Set<string>();
+  const gardenPlotsRotatedOnce = rotateLeft(gardenPlotsCopy);
 
-  let bottomSideSplitShotScore = 0;
+  const bottomSide = gardenPlotsRotatedOnce.map((row) => {
+    return row.findIndex((p) => p === region.plant);
+  }).filter((val) => val !== -1);
 
-  bottomSideSplitShotScore = bottomSide.reduce((acc, val) => {
-    const valley: [number, number] = [val[0], val[1] - 1];
-    const splitShot = splitShotHit(valley, gardenPlotsRotatedOnce, region, "bottom");
-    if (splitShot) {
-      splitShot.forEach((val) => bottomSideRicochets.add(`${val[0]}-${val[1]}`));
-    }
-    if (splitShot) return acc + 2;
-    else return acc;
-  }, 0);
-
-  let bottomSideStraightShotScore: number;
+  let bottomSideScore: number;
 
   if (bottomSide.every((val) => val === bottomSide[0])) {
-    bottomSideStraightShotScore = 1;
+    bottomSideScore = 1;
   } else {
-    bottomSideStraightShotScore = bottomSide.slice(1).reduce((acc, val) => {
-      if (val[1] !== acc.lastValue[1]) {
-	if (leftSideRicochets.has(`${val[0]}-${val[1]}`)) return acc;
-	return { lastValue: val, score: acc.score + 1 };
+    bottomSideScore = bottomSide.slice(1).reduce((acc, val) => {
+      if (val !== acc.lastValue) {
+	return { lastValue: val, score: acc.score + 2 };
       }
       return acc;
     }
     , {lastValue: bottomSide[0], score: 1}).score;
   }
 
+  console.log("Bottom side cols: " + bottomSide.map((val) => val).join(", "));
+  console.log("Bottom side score: " + bottomSideScore + "For plant: " + region.plant);
+
   const gardenPlotsRotatedTwice = rotateLeft(gardenPlotsRotatedOnce);
 
-  let rightSide: [number, number][] = gardenPlotsRotatedTwice.map((row, i) => {
-    return [i, row.findIndex((p) => p === region.plant)]
-  });
-  rightSide = rightSide.filter((val) => val[1] !== -1);
-  const rightSideRicochets: Set<string> = new Set<string>();
+  const rightSide = gardenPlotsRotatedTwice.map((row) => {
+    return row.findIndex((p) => p === region.plant);
+  }).filter((val) => val !== -1);
 
-
-  let rightSideSplitShotScore = 0;
-
-  rightSideSplitShotScore = rightSide.reduce((acc, val) => {
-    const valley: [number, number] = [val[0], val[1] - 1];
-    const splitShot = splitShotHit(valley, gardenPlotsRotatedTwice, region, "right");
-    if (splitShot) {
-      splitShot.forEach((val) => rightSideRicochets.add(`${val[0]}-${val[1]}`));
-    }
-    if (splitShot) return acc + 2;
-    else return acc;
-  }, 0);
-
-  let rightSideStraightShotScore: number;
+  let rightSideScore: number;
 
   if (rightSide.every((val) => val === rightSide[0])) {
-    rightSideStraightShotScore = 1;
+    rightSideScore = 1;
   } else {
-    rightSideStraightShotScore = rightSide.slice(1).reduce((acc, val) => {
-      if (val[1] !== acc.lastValue[1]) {
-	return { lastValue: val, score: acc.score + 1 };
+    rightSideScore = rightSide.slice(1).reduce((acc, val) => {
+      if (val !== acc.lastValue) {
+	return { lastValue: val, score: acc.score + 2 };
       }
       return acc;
     }
     , {lastValue: rightSide[0], score: 1}).score;
   }
 
-  const gardenPlotsRotatedThrice = rotateLeft(gardenPlotsRotatedTwice);
+  console.log("Right side cols: " + rightSide.map((val) => val).join(", "));
+  console.log("Right side score: " + rightSideScore + "For plant: " + region.plant);
 
-  let topSide: [number, number][] = gardenPlotsRotatedThrice.map((row, i) => {
-    return [i, row.findIndex((p) => p === region.plant)]
-  });
-  topSide = topSide.filter((val) => val[1] !== -1);
-  const topSideRicochets: Set<string> = new Set<string>();
+const gardenPlotsRotatedThrice = rotateLeft(gardenPlotsRotatedTwice);
 
-  let topSideSplitShotScore = 0;
+  const topSide = gardenPlotsRotatedThrice.map((row) => {
+    return row.findIndex((p) => p === region.plant);
+  }).filter((val) => val !== -1);
 
-  topSideSplitShotScore = topSide.reduce((acc, val) => {
-    const valley: [number, number] = [val[0], val[1] - 1];
-    const splitShot = splitShotHit(valley, gardenPlotsRotatedThrice, region, "top");
-    if (splitShot) {
-      splitShot.forEach((val) => topSideRicochets.add(`${val[0]}-${val[1]}`));
-    }
-    if (splitShot) return acc + 2;
-    else return acc;
-  }, 0);
-
-  let topSideStraightShotScore: number;
+  let topSideScore: number;
 
   if (topSide.every((val) => val === topSide[0])) {
-    topSideStraightShotScore = 1;
+    topSideScore = 1;
   } else {
-    topSideStraightShotScore = topSide.slice(1).reduce((acc, val) => {
-	if (leftSideRicochets.has(`${val[0]}-${val[1]}`)) return acc;
-      if (val[1] !== acc.lastValue[1]) {
-	return { lastValue: val, score: acc.score + 1 };
+    topSideScore = topSide.slice(1).reduce((acc, val) => {
+      if (val !== acc.lastValue) {
+	return { lastValue: val, score: acc.score + 2 };
       }
       return acc;
     }
     , {lastValue: topSide[0], score: 1}).score;
   }
+  
+  console.log("Top side cols: " + topSide.map((val) => val).join(", "));
+  console.log("Top side score: " + topSideScore + "For plant: " + region.plant);
 
-  return leftSideStraightShotScore +
-       leftSideSplitShotScore +
-	bottomSideStraightShotScore +
-	bottomSideSplitShotScore +
-	rightSideStraightShotScore +
-	rightSideSplitShotScore +
-	topSideStraightShotScore +
-	topSideSplitShotScore;
+return leftSideScore + bottomSideScore + rightSideScore + topSideScore;
   
 };
 
