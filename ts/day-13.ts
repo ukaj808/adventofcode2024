@@ -38,21 +38,27 @@ const readInput = (): Machine[] => {
 
 const play = (machine: Machine): PlayThrough[] => {
 
-  const maximumAButtonPressesForX = Math.floor(machine.prizeLocation.x / machine.buttonA.xMoves);
-  const maximumAButtonPressesForY = Math.floor(machine.prizeLocation.y / machine.buttonA.yMoves);
-
-  const maximumBButtonPressesForX = Math.floor(machine.prizeLocation.x / machine.buttonB.xMoves);
-  const maximumBButtonPressesForY = Math.floor(machine.prizeLocation.y / machine.buttonB.yMoves);
 
   const winningPlayThroughs: PlayThrough[] = [];
 
-  for (let a = 0; a <= maximumAButtonPressesForX && a <= maximumAButtonPressesForY; a++) {
-    for (let b = 0; b <= maximumBButtonPressesForX && b <= maximumBButtonPressesForY; b++) {
-      const calculatedX = (a * machine.buttonA.xMoves) + (b * machine.buttonB.xMoves);
-      const calculatedY = (a * machine.buttonA.yMoves) + (b * machine.buttonB.yMoves);
-      if (calculatedX === machine.prizeLocation.x && calculatedY === machine.prizeLocation.y) {
-	winningPlayThroughs.push({ aButtonPresses: a, bButtonPresses: b });
-      }
+  const maximumBButtonPresses = Math.min(Math.floor(machine.prizeLocation.x / machine.buttonB.xMoves), Math.floor(machine.prizeLocation.y / machine.buttonB.yMoves));
+
+  for (let i = 0; i < maximumBButtonPresses;) {
+    // 94a + 22b = 8400
+    // 94a = 8400 - 22b
+    // a = (8400 - 22b) / 94
+    const aButtonPresses = (machine.prizeLocation.x - (machine.buttonB.xMoves * i)) / machine.buttonA.xMoves;
+    if (aButtonPresses % 1 !== 0) {
+      continue;
+    } 
+    const bButtonPresses = i;
+
+    const calculatedY = (machine.buttonA.yMoves * aButtonPresses) + (machine.buttonB.yMoves * bButtonPresses);
+
+    const doesYMatch = (machine.prizeLocation.y === calculatedY);
+    if (doesYMatch) {
+      console.log(`aButtonPresses: ${aButtonPresses}, bButtonPresses: ${bButtonPresses}`);
+      winningPlayThroughs.push({ aButtonPresses, bButtonPresses });
     }
   }
 
