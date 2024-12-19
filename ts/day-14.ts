@@ -49,7 +49,9 @@ const moveNTimes = (n: number) => { return Array.from({length: n}, (r: Robot) =>
 const tilesWide = 101;
 const tilesTall = 103;
 
-const moveRobotsNTimes = (seconds: number) => robots.map((r) => moveNTimes(seconds).reduce((r, fn) => fn(tilesWide, tilesTall, r), r));
+const moveRobotsNTimes = (seconds: number) => robots.map((r) => moveNTimes(seconds).reduce((r, fn) =>{
+  return fn(tilesWide, tilesTall, r);
+}, r));
 
 /*
 const robotsInQuadrants = moveRobotsNTimes(100).reduce(([q1, q2, q3, q4]: [number, number, number, number], r: Robot) => {
@@ -65,31 +67,24 @@ const robotsInQuadrants = moveRobotsNTimes(100).reduce(([q1, q2, q3, q4]: [numbe
 }, [0, 0, 0, 0]);
 */
 
-for (let i = 0; i < 1000000; i++) {
+const robotsMoved = moveRobotsNTimes(10000);
+
+/*
+for (let i = 0; i < 50000; i++) {
   const robots = moveRobotsNTimes(i);
-  const grid = Array.from({length: tilesTall}, () => Array.from({length: tilesWide}, () => ""));
-  const robotGrid = grid.map((row, i) => row.map((val, j) => {
-    const r = robots.find((r) => r.position.x === j && r.position.y === i);
-    if (r) {
-      return '#';
-    } else return '.';
-  }));
-  const patternDetected = false;
-
-  for (let rowNum = 0; rowNum < robotGrid.length; rowNum++) {
-    for (let colNum = 0; colNum < robotGrid[0].length; colNum++) {
-    }
-  } 
-
-  if (patternDetected) {
-    for (let j = 0; j < robotGrid.length; j++) {
-      let ln = '';
-      for (let g = 0; g < robotGrid[0].length; g++) {
-        ln = ln + robotGrid[j][g];
-      }
-      console.log(ln + '\n');
-    }
-  }
+  const grid = Array.from({length: tilesTall}, (_, i) => { 
+    const arr = Array.from({length: tilesWide}, (_, j) => {
+      const r = robots.find((r) => r.position.x === j && r.position.y === i);
+      if (r) {
+        return '#';
+      } else
+        return '.';
+    })
+    const robotCount = arr.filter((c) => c === '#').length;
+    return arr;
+  });
 }
+*/
 
 
+// 50000

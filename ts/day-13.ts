@@ -41,8 +41,24 @@ const play = (machine: Machine): PlayThrough[] => {
 
   const winningPlayThroughs: PlayThrough[] = [];
 
-  const maximumBButtonPresses = Math.min(Math.floor(machine.prizeLocation.x / machine.buttonB.xMoves), Math.floor(machine.prizeLocation.y / machine.buttonB.yMoves));
+  const combinedPrizeLocationSolvingForB = (machine.prizeLocation.x * machine.buttonA.yMoves) - (machine.prizeLocation.y * machine.buttonA.xMoves);
 
+  const bButtonPresses = combinedPrizeLocationSolvingForB / ((machine.buttonB.xMoves * machine.buttonA.yMoves) - (machine.buttonA.xMoves * machine.buttonB.yMoves));
+ 
+  const combinedPrizeLocationSolvingForA = (machine.prizeLocation.y * machine.buttonB.xMoves) - (machine.prizeLocation.x * machine.buttonB.yMoves);
+
+  const aButtonPresses = combinedPrizeLocationSolvingForA / ((machine.buttonB.xMoves * machine.buttonA.yMoves) - (machine.buttonA.xMoves * machine.buttonB.yMoves));
+
+
+  if (aButtonPresses % 1 === 0 && bButtonPresses % 1 === 0) {
+    winningPlayThroughs.push({ aButtonPresses, bButtonPresses });
+  }
+  
+
+  return winningPlayThroughs;
+   
+  /*
+  const maximumBButtonPresses = Math.min(Math.floor(machine.prizeLocation.x / machine.buttonB.xMoves), Math.floor(machine.prizeLocation.y / machine.buttonB.yMoves));
   for (let i = 0; i < maximumBButtonPresses;) {
     // 94a + 22b = 8400
     // 94a = 8400 - 22b
@@ -63,6 +79,7 @@ const play = (machine: Machine): PlayThrough[] => {
   }
 
   return winningPlayThroughs;
+  */
 
 };
 
